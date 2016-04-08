@@ -1,0 +1,135 @@
+- hosts: localhost
+  gather_facts: False
+  sudo: no
+
+  vars:
+    - delete: false
+
+  vars_files:
+    - "vars/ec2/{{ launch_environment }}.yml"
+
+  tasks:
+
+    - name: Get my IP address
+      uri: url=http://icanhazip.com return_content=yes
+      register: ip_response
+      when: not delete
+
+    - name: Set my IP address
+      set_fact: my_ip="{{ ip_response.content|replace("\n", "/32") }}"
+      when: not delete
+
+    - name: Get the VPC ID
+      command: "bin/list_vpc_resources -t vpc -r {{ aws_region }} -f tag:environment={{launch_environment}}"
+      register: raw_vpc_list
+      when: not delete
+
+    - set_fact: vpc_id="{{ raw_vpc_list.stdout | from_json | first }}"
+      when: not delete
+
+    - name: Create Web Security Group
+      action:
+        module: ec2_group
+        name: "{{ launch_environment }}_web"
+        description: "{{ launch_environment }} Web facing security group"
+        ec2_access_key: "{{ ec2_access_key }}"
+        ec2_secret_key: "{{ ec2_secret_key }}"
+        region: "{{ aws_region }}"
+        vpc_id: "{{ vpc_id }}"
+        rules:
+          - proto: tcp # HTTP
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp # HTTPS
+            from_port: 443
+            to_port: 443
+            cidr_ip: 0.0.0.0/0
+      register: web_security_group
+      when: not delete
+
+    - ec2_tag: resource="{{ web_security_group.group_id }}" region="{{ aws_region }}" state=present
+      args:
+        tags:
+          Name: "{{ launch_environment }}_web"
+          environment: "{{ launch_environment }}"
+          class: "web"
+      when: not delete
+
+    - name: Create Management Security Group
+      action:
+        module: ec2_group
+        name: "{{ launch_environment }}_mgmt"
+        description: "{{ launch_environment }} management security group"
+        ec2_access_key: "{{ ec2_access_key }}"
+        ec2_secret_key: "{{ ec2_secret_key }}"
+        region: "{{ aws_region }}"
+        vpc_id: "{{ vpc_id }}"
+        rules:
+          - proto: tcp # SSH
+            from_port: 22
+            to_port: 22
+            cidr_ip: "{{ my_ip }}"
+      register: mgmt_security_group
+      tags:
+        - security_groups
+      when: not delete
+
+    - ec2_tag: resource="{{ mgmt_security_group.group_id }}" region="{{ aws_region }}" state=present
+      args:
+        tags:
+          Name: "{{ launch_environment }}_mgmt"
+          environment: "{{ launch_environment }}"
+          class: "mgmt"
+      when: not delete
+
+    - name: Create Shared Storage Security Group
+      action:
+        module: ec2_group
+        name: "{{ launch_environment }}_shared_storage"
+        description: "{{ launch_environment }} shared storage group"
+        ec2_access_key: "{{ ec2_access_key }}"
+        ec2_secret_key: "{{ ec2_secret_key }}"
+        region: "{{ aws_region }}"
+        vpc_id: "{{ vpc_id }}"
+        rules:
+          - proto: tcp # NFS
+            from_port: 111
+            to_port: 111
+            group_name: "{{ launch_environment }}_shared_storage"
+          - proto: tcp # NFS
+            from_port: 2049
+            to_port: 2049
+            group_name: "{{ launch_environment }}_shared_storage"
+          - proto: udp # NFS
+            from_port: 111
+            to_port: 111
+            group_name: "{{ launch_environment }}_shared_storage"
+          - proto: udp # NFS
+            from_port: 32806
+            to_port: 32806
+            group_name: "{{ launch_environment }}_shared_storage"
+      register: shared_storage_security_group
+      when: not delete
+
+    - ec2_tag: resource="{{ shared_storage_security_group.group_id }}" region="{{ aws_region }}" state=present
+      args:
+        tags:
+          Name: "{{ launch_environment }}_shared_storage"
+          environment: "{{ launch_environment }}"
+          class: "shared_storage"
+      when: not delete
+
+
+    - name: Delete security groups
+      action:
+        module: ec2_group
+        name: "{{ item }}"
+        state: absent
+        description: ""
+        region: "{{ aws_region }}"
+      with_items:
+        - "{{ launch_environment }}_web"
+        - "{{ launch_environment }}_mgmt"
+        - "{{ launch_environment }}_shared_storage"
+      when: delete
