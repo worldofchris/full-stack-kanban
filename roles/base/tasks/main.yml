@@ -1,0 +1,42 @@
+---
+- name: Turn off requiretty in /etc/sudoers
+  replace: dest=/etc/sudoers regexp='^Defaults\s+requiretty' replace='#Defaults    requiretty' backup=yes
+
+- name: Set grub to not wait for input after a failed boot
+  lineinfile:
+    dest: /etc/default/grub
+    regexp: '^GRUB_RECORDFAIL_TIMEOUT='
+    line: 'GRUB_RECORDFAIL_TIMEOUT=5'
+  notify: update-grub
+
+- name: Set kernel to reboot on a kernel panic
+  lineinfile:
+    dest: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="panic=90"'
+  notify: update-grub
+
+- name: Set Timezone to UTC
+  file: src=/usr/share/zoneinfo/UTC
+    dest=/etc/localtime
+    state=link
+    force=yes
+
+- name: Force apt cache update
+  apt: update_cache=yes
+
+# Update all packages and package cache to the latest version
+- name: Update all apt packages
+  apt: upgrade=dist update_cache=yes cache_valid_time=3600
+
+- name: install git
+  apt: name=git-core state=present
+
+- name: install Python httplib2 so we can use uri to access instance metadata
+  apt: name=python-httplib2 state=present
+
+- name: make sure NTPD is installed
+  apt: name=ntp state=present
+
+- name: Start NTPD
+  service: name=ntp state=started enabled=yes

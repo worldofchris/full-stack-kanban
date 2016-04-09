@@ -1,0 +1,35 @@
+- hosts: localhost
+  gather_facts: False
+  sudo: no
+
+  vars_files:
+    - "vars/ec2/{{ launch_environment }}.yml"
+
+  tasks:
+
+    - name: Configure VPC
+      ec2_vpc:
+        region: "{{ aws_region }}"
+        state: present
+        cidr_block: "{{ cidr_block }}"
+        dns_hostnames: yes
+        dns_support: yes
+        resource_tags: 
+          Name: "{{ launch_environment }}-vpc"
+          environment: "{{ launch_environment }}"
+        wait: yes
+        wait_timeout: 600
+        subnets:
+          # EC2
+          - cidr: "{{ EC2_PUB_A['cidr'] }}"
+            az: "{{ aws_region }}a"
+            resource_tags:
+              environment: "{{ launch_environment }}"
+              Name: "{{ EC2_PUB_A['name'] }}"
+        internet_gateway: yes
+        route_tables:
+          - subnets:
+              - "{{ EC2_PUB_A['cidr'] }}"
+            routes:
+              - dest: 0.0.0.0/0
+                gw: igw

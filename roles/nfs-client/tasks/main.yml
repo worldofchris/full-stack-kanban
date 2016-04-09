@@ -1,0 +1,31 @@
+- name: Ensure nfs client installed
+  apt: name=nfs-common state=present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure nfs client installed
+  yum: name=nfs-utils state=present
+  when: ansible_os_family == "RedHat"
+
+
+- name: Make a mount point for the shared storage
+  file:
+    path="{{ item.mount_point }}"
+    state=directory
+    owner="{{ item.username }}"
+    group="{{ item.username }}"
+    mode=0775
+  with_items: files_systems
+
+- name: Unmount the shared storage
+  shell: "umount {{ item.mount_point }}"
+  with_items: files_systems
+  ignore_errors: yes
+
+- name: Mount the shared storage
+  mount:
+    name="{{ item.mount_point }}"
+    fstype="{{ item.type }}"
+    src="{{ item.device }}"
+    opts="{{ item.options }}"
+    state=mounted
+  with_items: files_systems

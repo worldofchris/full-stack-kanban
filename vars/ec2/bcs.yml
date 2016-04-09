@@ -1,0 +1,43 @@
+aws_region: eu-west-1
+aws_region_short: "EU"
+env_short: "BCS"
+
+cidr_block: "100.0.0.0/16"
+subnet_0_cidr_block: "100.0.1.0/24"
+ec2_instance_type: "t2.micro"
+ec2_keypair: "bcs"
+ec2_image:   "ami-f0b11187"
+
+EC2_PUB_A: {'name': '100.0.1-EC2-PUB-A', 'cidr': "100.0.1.0/24"}
+
+shared_storage_host: woc-nfs-01.bcs.internal
+
+ec2_instances:
+  - instance_type: "{{ ec2_instance_type }}"
+    instance_tags:
+        Name: "{{ aws_region_short }}-{{ env_short }}-LI-WOC-WRK-01"
+        class: "worker"
+        environment: "{{ launch_environment }}"
+    image: "{{ ec2_image }}"
+    exact_count: 1
+    count_tag:
+        Name: "{{ aws_region_short }}-{{ env_short }}-LI-WOC-WRK-01"
+    zone: "{{ aws_region }}a"
+    group: ["{{ launch_environment }}_web",
+            "{{ launch_environment }}_mgmt",
+            "{{ launch_environment }}_shared_storage"]
+    subnet_name: "{{ EC2_PUB_A['name'] }}"
+
+  - instance_type: "{{ ec2_instance_type }}"
+    instance_tags:
+        Name: "{{ aws_region_short }}-{{ env_short }}-LI-WOC-NFS-01"
+        class: "storage"
+        environment: "{{ launch_environment }}"
+    image: "{{ ec2_image }}"
+    exact_count: 1
+    count_tag:
+        Name: "{{ aws_region_short }}-{{ env_short }}-LI-WOC-NFS-01"
+    zone: "{{ aws_region }}a"
+    group: ["{{ launch_environment }}_mgmt",
+            "{{ launch_environment }}_shared_storage"]
+    subnet_name: "{{ EC2_PUB_A['name'] }}"

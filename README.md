@@ -20,6 +20,18 @@ We'll explore how this feedback goes beyond the running of the system and back u
 
 # Getting up and Running
 
+## AWS
+
+The demo can be deployed to aws using the `aws-ansible` script
+
+First create a VPC:
+
+  aws-ansible bcs vpc.yml
+
+Then set up the security groups:
+
+  aws-ansible bcs security-groups.yml
+
 ## Dependencies
 
 ### Ubuntu Linux VER

@@ -1,0 +1,27 @@
+- set_fact: install_dir="/home/{{ username }}/collectd-resque"
+
+- name: "Deploy collectd-resque"
+  git: repo=https://github.com/worldofchris/collectd-resque.git
+       dest="{{ install_dir }}"
+  sudo: yes
+  sudo_user: "{{ username }}"
+
+- name: "Install collectd-resque"
+  command: "/home/{{ username }}/.rbenv/shims/bundle"
+  args:
+    chdir: "{{ install_dir }}"
+  sudo: yes
+  sudo_user: "{{ username }}"
+
+- name: "Deploy config file"
+  template: src=config.yml.j2
+            dest="{{ install_dir }}/config.yml"
+  sudo: yes
+  sudo_user: "{{ username }}"
+
+- name: "Deploy wrapper script"
+  template: src=collectd_resque.sh.j2
+            dest="{{ install_dir }}/collectd_resque.sh"
+            mode="u=rx,g=r,o=r"
+  sudo: yes
+  sudo_user: "{{ username }}"

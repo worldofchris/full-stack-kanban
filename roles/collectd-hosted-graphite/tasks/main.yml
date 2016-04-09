@@ -1,0 +1,9 @@
+
+- name: Add the OS specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Configure Collectd plugins
+  template: src={{ item }}.conf.j2 dest={{ collectd_conf_dir }}/{{ item }}.conf
+  with_items: "{{ collectd_configure_plugins }}"
+  notify:
+    - Restart Collectd

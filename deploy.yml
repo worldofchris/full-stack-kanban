@@ -1,0 +1,76 @@
+# With thanks to http://tech.taskrabbit.com/blog/2015/03/12/rebuilding-capistrano-with-ansible/
+---
+- name: Worker
+  hosts: ["tag_class_worker:&tag_environment_{{ launch_environment }}"]
+
+  gather_facts: true
+  sudo: no
+
+  vars:
+    username: bcs
+    root_path: "/user/local/bcs/worker"
+    prefix: "/home/{{ username }}/.rbenv/shims"
+    reset_database: false
+
+  pre_tasks:
+    - name: Gathering ec2 facts
+      action: ec2_facts
+
+  tasks:
+    - name: Generate release timestamp
+      command: date +%Y%m%d%H%M%S
+      register: timestamp
+      run_once: true
+
+    - set_fact: "release_path='{{root_path}}/releases/{{ timestamp.stdout }}'"
+
+    - set_fact:  "shared_path='{{root_path}}/shared'"
+    - set_fact: "current_path='{{root_path}}/current'"
+
+    - name: "Deploy the app from git"
+      git:
+        repo=https://github.com/worldofchris/full-stack-kanban.git
+        version={{ branch | default('master') }}
+        dest="{{ release_path }}"
+      sudo: yes
+      sudo_user: "{{ username }}"
+
+    - name: "Install the app"
+      command: "{{ prefix }}/bundle install chdir={{ release_path }}"
+      sudo: yes
+      sudo_user: "{{ username }}"
+
+    - name: "Reset the database"
+      command: "{{ prefix }}/bundle exec rake db:reset RAILS_ENV={{ launch_environment }} chdir={{ release_path }}"
+      sudo: yes
+      sudo_user: "{{ username }}"
+      when: reset_database
+      run_once: true
+
+    - name: "Migrate the Database"
+      command: "{{ prefix }}/bundle exec rake db:migrate RAILS_ENV={{ launch_environment }} chdir={{ release_path }}"
+      sudo: yes
+      sudo_user: "{{ username }}"
+      run_once: true
+
+    - name: "Link current to new release"
+      file:
+        src: "{{ release_path }}"
+        dest: "{{ current_path }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: link
+      sudo: yes
+      sudo_user: "{{ username }}"
+
+    - name: "Restart app"
+      tags:
+        - start_app
+      file:
+        path: "{{ current_path }}/tmp/restart.txt"
+        state: touch
+        owner: "{{ username }}"
+        group: "{{ username }}"
+      sudo: yes
+      sudo_user: "{{ username }}"
+

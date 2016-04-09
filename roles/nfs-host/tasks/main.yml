@@ -1,0 +1,25 @@
+- name: Ensure nfs server installed
+  apt: name=nfs-kernel-server state=present
+
+- name: Ensure the exports file exists
+  file:
+    path=/etc/exports
+    owner=root
+    group=root
+    mode=0644
+    state=touch
+
+- name: Ensure the directory to share exists
+  file:
+    path: "{{ export }}"
+    state: directory
+    owner: "{{ username }}"
+    mode: 0744
+
+- name: Add the export
+  lineinfile:
+    dest=/etc/exports
+    line="{{ export }}       *(rw,sync,no_root_squash)"
+    state=present
+  notify:
+    - restart nfs-kernel-server

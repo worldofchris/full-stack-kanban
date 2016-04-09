@@ -1,0 +1,51 @@
+- name: Add deploy user
+  user: name="{{ username }}" shell=/bin/bash
+
+- name: Allow user to run commands via sudo
+  template: src=sudoers.j2 dest="/etc/{{ username }}.tmp" owner=root group=root mode=0644
+
+- name: Sudoers file check so we don't pw'n the machine
+  shell: visudo -q -c -f "/etc/{{ username }}.tmp"
+
+- name: Deploy sudoers file
+  shell: cp -f "/etc/{{ username }}.tmp" "/etc/sudoers.d/{{ username }}"
+
+- name: "Ensure .ssh directory exists"
+  file:
+    path="/home/{{ username }}/.ssh"
+    state=directory
+    owner="{{ username }}"
+    group="{{ username }}"
+    mode=0775
+
+- name: "Set username for accessing git"
+  command: git config --global user.email "{{ user_email }}"
+  sudo: yes
+  sudo_user: "{{ username }}"
+
+- name: "Set up root path for deployments"
+  file:
+    path="{{ root_path }}"
+    state=directory
+    owner="{{ username }}"
+    group="{{ username }}"
+    mode=0775
+
+- name: "Add the deployment dirs"
+  file:
+    path="{{ root_path }}/{{ item }}"
+    state=directory
+    owner="{{ username }}"
+    group="{{ username }}"
+    mode=0775
+  with_items:
+    - releases
+    - shared
+
+- name: "Add the PID dir"
+  file:
+    path="{{ root_path }}/shared/tmp/pids"
+    state=directory
+    owner="{{ username }}"
+    group="{{ username }}"
+    mode=0775

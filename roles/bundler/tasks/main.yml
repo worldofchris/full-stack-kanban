@@ -1,0 +1,20 @@
+- name: "Ensure .ruby-version exists"
+  file: path="~{{ username }}/.ruby-version" state=touch mode="u+rwx"
+  sudo: yes
+  sudo_user: "{{ username }}"
+
+- name: "Set default ruby version"
+  lineinfile: dest="~{{ username }}/.ruby-version" line='2.3.0' state=present
+  sudo: yes
+  sudo_user: "{{ username }}"
+
+- name: "Install bundler"
+  shell: "{{ prefix }}/gem install bundler chdir=~{{ username }}"
+  sudo: yes
+
+- name: "Rehash to make bundle command available"
+  shell: "~{{ username }}/.rbenv/bin/rbenv rehash chdir=~{{ username }}"
+  sudo: yes
+  sudo_user: "{{ username }}"
+  ignore_errors: yes
+  # TODO: Get to the bottom of this failing on some hosts

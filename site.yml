@@ -1,0 +1,75 @@
+---
+- name: Storage
+  hosts: ["tag_class_storage:&tag_environment_{{ launch_environment }}"]
+  gather_facts: true
+  sudo: yes
+  remote_user: ubuntu
+
+  roles:
+    - base
+    - { role: deployer, username: bcs, user_email: "chris@chrisyoung.org", root_path: "/usr/local/bcs" }
+    - { role: nfs-host, username: "bcs", export: "/usr/local/bcs/data" }
+    # TODO: Looks like nfs server is not being (re)started
+    - role: collectd
+      collectd_load_plugins:
+        - cpu
+        - disk
+        - memory
+        - df
+        - write_graphite
+    - role: collectd-hosted-graphite
+      collectd_configure_plugins:
+        - write_graphite
+
+- name: Worker
+  hosts: ["tag_class_worker:&tag_environment_{{ launch_environment }}"]
+  gather_facts: true
+  sudo: yes
+  user: ubuntu
+
+  vars_files:
+    - "vars/ec2/{{ launch_environment }}.yml"
+
+  vars:
+    prefix: "/home/{{ username }}/.rbenv/shims" # FIXME Work out how to get path to gem added without this
+    rbenv:
+      env: 'user'
+      version: v1.0.0
+      ruby_version: '2.3.0'
+
+  roles:
+    - base
+    - { role: deployer, username: bcs, user_email: "chris@chrisyoung.org", root_path: "/usr/local/bcs" }
+    - role: redis
+    - role: rbenv
+      rbenv_users:
+        - bcs
+      rbenv_plugins:
+        - { name: "rbenv-vars",         repo: "https://github.com/sstephenson/rbenv-vars.git",         version: "v1.2.0" }
+        - { name: "ruby-build",         repo: "https://github.com/sstephenson/ruby-build.git",         version: "v20160330" }
+        - { name: "rbenv-default-gems", repo: "https://github.com/sstephenson/rbenv-default-gems.git", version: "v1.0.0" }
+        - { name: "rbenv-installer",    repo: "https://github.com/fesplugas/rbenv-installer.git",      version: "8bb9d34d01f78bd22e461038e887d6171706e1ba" }
+        - { name: "rbenv-update",       repo: "https://github.com/rkh/rbenv-update.git",               version: "32218db487dca7084f0e1954d613927a74bc6f2d" }
+        - { name: "rbenv-whatis",       repo: "https://github.com/rkh/rbenv-whatis.git",               version: "v1.0.0" }
+        - { name: "rbenv-use",          repo: "https://github.com/rkh/rbenv-use.git",                  version: "v1.0.0" }
+    - {role: bundler, username: bcs}
+    - sqlite
+    - role: nfs-client
+      # TODO: Something to add host entry for nfs server
+      files_systems:
+      - name: "shared-storage"
+        type: "nfs"
+        device: "{{ shared_storage_host }}:/usr/local/bcs/data"
+        mount_point: "/usr/local/bcs/data"
+        options: "rw,bg"
+        username: bcs
+    - role: collectd
+      collectd_load_plugins:
+        - cpu
+        - disk
+        - memory
+        - df
+        - write_graphite
+    - role: collectd-hosted-graphite
+      collectd_configure_plugins:
+        - write_graphite

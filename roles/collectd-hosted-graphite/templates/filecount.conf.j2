@@ -1,0 +1,9 @@
+<Plugin "filecount">
+  {% for item in filecount_directories %}
+  <Directory "{{ item }}">
+    Name "{{ filecount_name }}"
+    Recursive false
+  </Directory>
+  {% endfor %}
+</Plugin>
+

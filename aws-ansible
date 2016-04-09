@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Terminate script if anything fails
+set -e
+
+CWD=$(pwd)
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
+export PYTHONUNBUFFERED=1
+export ANSIBLE_HOST_KEY_CHECKING=False
+export ANSIBLE_RECORD_HOST_KEYS=False
+export ANSIBLE_TIMEOUT=300
+export ANSIBLE_NOCOWS=1
+
+ENVIRONMENT="$1"
+
+display_usage() {
+  echo "Run Ansible Playbook in AWS env"
+  echo -e "\nUsage:aws-ansible ENV this.yml,that.yml [additional Ansible params]\n"
+}
+
+if [  $# -le 0 ]
+then
+  display_usage
+  exit 1
+fi
+
+# check whether user had supplied -h or --help . If yes display usage
+if [[ ( $1 == "--help") ||  $1 == "-h" ]]
+then
+  display_usage
+  exit 0
+fi
+
+export PRIVATE_KEY_FILE=~/${ENVIRONMENT}.pem
+
+if [ ! -f $PRIVATE_KEY_FILE ]; then
+  echo "ERROR: ${PRIVATE_KEY_FILE} not found"
+  exit 1
+fi
+
+if [ "${AWS_ACCESS_KEY_ID}" = "" ]; then
+  echo AWS_ACCESS_KEY_ID is unset
+  exit 1
+fi
+if [ "${AWS_SECRET_ACCESS_KEY}" = "" ]; then
+  echo AWS_SECRET_ACCESS_KEY is unset
+  exit 1
+fi
+
+IFS=',' read -ra PLAYBOOKS <<< "$2"
+
+shift
+shift
+
+for i in "${PLAYBOOKS[@]}"; do
+  PLAYBOOK="$CWD/$i"
+
+  if [ -f $PLAYBOOK ]; then
+    ansible-playbook -i inventory $PLAYBOOK $USERNAME --private-key $PRIVATE_KEY_FILE --extra-vars "launch_environment=${ENVIRONMENT} ec2_access_key=${AWS_ACCESS_KEY_ID} ec2_secret_key=${AWS_SECRET_ACCESS_KEY}" $@
+  else
+    echo "ERROR: $PLAYBOOK not found"
+    exit 1
+  fi
+done
+
