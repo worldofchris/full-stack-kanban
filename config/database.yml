@@ -26,4 +26,4 @@ production:
 
 bcs:
   <<: *default
-  database: db/bcs.sqlite3
+  database: /usr/local/bcs/shared/bcs.sqlite3
