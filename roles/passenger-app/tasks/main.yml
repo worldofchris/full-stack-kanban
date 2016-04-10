@@ -1,0 +1,30 @@
+---
+- name: Configure passenger_root 
+  lineinfile: 
+    dest: /etc/nginx/nginx.conf 
+    insertafter: "^(.*)# Phusion Passenger config"
+    line: "passenger_root /usr/lib/ruby/vendor_ruby/phusion_passenger/locations.ini;"
+
+- name: Configure passenger_ruby
+  lineinfile: 
+    dest: /etc/nginx/nginx.conf 
+    insertafter: "^(.*)# Phusion Passenger config"
+    line: "passenger_ruby /home/{{ username }}/.rbenv/shims/ruby;"
+
+- name: Configure site
+  template: 
+    src: site.j2
+    dest: /etc/nginx/sites-available/{{ app_name }}
+
+- name: Enable site
+  file: 
+    src: /etc/nginx/sites-available/{{ app_name }}
+    dest: /etc/nginx/sites-enabled/{{ app_name }}
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    state: link
+
+- name: Remove default app 
+  file: 
+    path: /etc/nginx/sites-enabled/default
+    state: absent

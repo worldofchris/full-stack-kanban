@@ -1,0 +1,4 @@
+- name: "Install ruby development headers"
+  apt: name=ruby-dev state=latest
+- name: "Install gcc for RubyRacer"
+  apt: name=g++ state=latest

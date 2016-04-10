@@ -1,0 +1,12 @@
+server {
+  listen 80 default_server;
+  passenger_enabled on;
+  passenger_app_env {{ launch_environment }};
+  root {{ root_path }}/current/public;
+
+  {% if secure %}
+  if ($http_x_forwarded_proto != 'https') {
+      rewrite ^ https://$host$request_uri? permanent;
+  }
+  {% endif %}
+}
