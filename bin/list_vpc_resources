@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+"""
+list AWS VPC resources e.g. VPCs, Subnets etc.
+Based on https://github.com/boto/boto/blob/develop/bin/list_instances
+"""
+
+import sys
+from optparse import OptionParser
+import boto
+from boto.ec2 import regions
+import boto.vpc
+import json
+
+def main():
+    """
+    Args are as subset of list_instances as we're only interested in getting the resource id right now
+    """
+    parser = OptionParser()
+    parser.add_option("-r",
+                      "--region",
+                      help="Region (default us-east-1)", dest="region", default="us-east-1")
+    parser.add_option("-t",
+                      "--type",
+                      help="Resource Type (default vpc)", dest="resource_type", default="vpc")
+    parser.add_option("-f",
+                      "--filter",
+                      help="Filter option sent to get_all_vpcs API call, format is key1=value1,key2=value2,...",
+                      default=None)
+    (options, args) = parser.parse_args()
+
+    # Connect the region
+    for region in regions():
+        if region.name == options.region:
+            use_region = region
+            break
+    else:
+        print "Region %s not found." % options.region
+        sys.exit(1)
+    vcon = boto.vpc.connect_to_region(use_region.name)
+
+    # Parse filters (if any)
+    if options.filter:
+        filters = dict([entry.split('=') for entry in options.filter.split(',')])
+    else:
+        filters = {}
+
+    if options.resource_type == "vpc":
+        vpcs = vcon.get_all_vpcs(filters=filters)
+        json.dump([ vpc.id for vpc in vpcs ], sys.stdout)
+
+    if options.resource_type == "subnet":
+        subnets = vcon.get_all_subnets(filters=filters)
+        json.dump({ subnet.tags["Name"]: subnet.id for subnet in subnets}, sys.stdout)
+
+    if options.resource_type == "security-group":
+        security_groups = vcon.get_all_security_groups(filters=filters)
+        json.dump([ security_group.id for security_group in security_groups ], sys.stdout)
+
+            
+if __name__ == "__main__":
+    main()
