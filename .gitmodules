@@ -13,3 +13,6 @@
 [submodule "roles/graphite-beacon"]
 	path = roles/graphite-beacon
 	url = https://github.com/klen/graphite-beacon.git
+[submodule "roles/passenger"]
+	path = roles/passenger
+	url = https://github.com/mtpereira/ansible-passenger.git
