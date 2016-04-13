@@ -30,10 +30,21 @@ RSpec.describe Worker, type: :model do
     next_worker_name = 'convert'
     duration = 10
     next_worker = Worker.create(name: next_worker_name, duration: 30)
-    worker = Worker.create(name: 'encode', duration: duration, next_worker: next_worker)
+    worker = Worker.create(name: 'encode',
+                           duration: duration,
+                           next_worker: next_worker)
     # expect the job to take some time
-    allow(Kernel).to receive(:sleep).with(duration).exactly(1).times
-    expect(WorkJob).to receive(:set).with(queue: next_worker_name)
+    allow(Kernel).to receive(:sleep)
+      .with(duration).exactly(1).times
+    expect(WorkJob).to receive(:set)
+      .with(queue: next_worker_name).and_return(WorkJob)
+    worker.work
+  end
+
+  it 'does some activity if we ask it to' do
+    cmd = 'ls'
+    worker = Worker.create(name: 'ingest', duration: 1, work_cmd: cmd)
+    expect(Kernel).to receive(:system).with(cmd)
     worker.work
   end
 end
