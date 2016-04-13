@@ -5,6 +5,8 @@ class WorkJob < ActiveJob::Base
   def perform(*args)
     # Get worker based on Queue Name and get it to do the work
     @worker = Worker.find_by(name: @queue_name)
-    @worker.work
+    unless @worker.nil?
+      @worker.work
+    end
   end
 end
