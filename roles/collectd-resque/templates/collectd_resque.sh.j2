@@ -2,4 +2,4 @@ export HOME=/home/{{ username }}
 export PATH=$HOME/.rbenv/shims:$PATH;
 export RBENV_ROOT=$HOME/.rbenv;
 cd /home/{{ username }}/collectd-resque
-./collectd_resque.rb -c /home/{{ username }}/collectd-resque/config.yml -e {{ launch_environment }}
+./bin/collectd_resque.rb -c /home/{{ username }}/collectd-resque/config.yml -e {{ launch_environment }}
