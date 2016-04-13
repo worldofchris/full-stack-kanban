@@ -17,6 +17,7 @@
         - memory
         - df
         - write_graphite
+        # interface?
     - role: collectd-hosted-graphite
       collectd_configure_plugins:
         - write_graphite
@@ -53,7 +54,10 @@
         - { name: "rbenv-whatis",       repo: "https://github.com/rkh/rbenv-whatis.git",               version: "v1.0.0" }
         - { name: "rbenv-use",          repo: "https://github.com/rkh/rbenv-use.git",                  version: "v1.0.0" }
     - {role: bundler, username: bcs}
-    - sqlite
+    - { role: passenger, passenger_webserver: nginx}
+    - { role: passenger-app, app_name: "bcs", username: "bcs", root_path: "/usr/local/bcs", secure: false}
+    - role: sqlite
+    - role: rubyracer
     - role: nfs-client
       # TODO: Something to add host entry for nfs server
       files_systems:
@@ -70,6 +74,13 @@
         - memory
         - df
         - write_graphite
+        - exec
     - role: collectd-hosted-graphite
+      username: bcs
+      exec_path: "/home/bcs/collectd-resque/collectd_resque.sh"
       collectd_configure_plugins:
         - write_graphite
+        - exec
+    - role: collectd-resque
+      username: bcs
+      endpoint: "{{ redis_endpoint }}" 
