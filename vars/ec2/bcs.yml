@@ -1,6 +1,7 @@
 aws_region: eu-west-1
 aws_region_short: "EU"
 env_short: "BCS"
+redis_endpoint: localhost:6379
 
 cidr_block: "100.0.0.0/16"
 subnet_0_cidr_block: "100.0.1.0/24"
