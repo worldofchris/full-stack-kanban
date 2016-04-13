@@ -17,6 +17,7 @@ ActiveRecord::Schema.define(version: 20160305184954) do
     t.string   "name"
     t.integer  "duration"
     t.integer  "next_worker"
+    t.string   "work_cmd"
     t.datetime "created_at",  null: false
     t.datetime "updated_at",  null: false
   end
