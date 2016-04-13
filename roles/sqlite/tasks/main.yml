@@ -1,3 +1,5 @@
-- name: Install SQLlite3 Dev lib # TODO: Should only be deployed in test
+- name: Install SQLlite3 Dev lib
   apt: name=libsqlite3-dev state=installed update_cache=yes cache_valid_time=3600
 
+- name: Install SQLlite3
+  apt: name=sqlite3 state=installed update_cache=yes cache_valid_time=3600
