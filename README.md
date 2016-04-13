@@ -26,11 +26,17 @@ The demo can be deployed to aws using the `aws-ansible` script
 
 First create a VPC:
 
-  aws-ansible bcs vpc.yml
+    aws-ansible bcs vpc.yml
 
 Then set up the security groups:
 
-  aws-ansible bcs security-groups.yml
+    aws-ansible bcs security-groups.yml
+
+Now you can create the instances used by the demo:
+
+
+    aws-ansible bcs instances.yml
+
 
 ## Dependencies
 
@@ -52,4 +58,15 @@ From here they go on to Graphite.
 ## Deployment
 
 WIP
+
+## Operation
+
+Enqueue some work with
+
+    rails c
+    irb(main):004:0> WorkJob.set(queue: 'ingest').perform_later
+
+Create some workers to do the work
+
+rake QUEUE='ingest' BACKGROUND=yes INTERVAL=5 COUNT=1 environment resque:workers >> /dev/null 2>> /dev/null
 
