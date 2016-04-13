@@ -2,13 +2,14 @@
 ---
 - name: Worker
   hosts: ["tag_class_worker:&tag_environment_{{ launch_environment }}"]
+  remote_user: ubuntu
 
   gather_facts: true
   sudo: no
 
   vars:
     username: bcs
-    root_path: "/user/local/bcs/worker"
+    root_path: "/usr/local/bcs"
     prefix: "/home/{{ username }}/.rbenv/shims"
     reset_database: false
 
@@ -53,6 +54,11 @@
       sudo_user: "{{ username }}"
       run_once: true
 
+    - name: "Compile assets"
+      command: "{{ prefix }}/bundle exec rake assets:precompile RAILS_ENV={{ launch_environment }} chdir={{ release_path }}"
+      sudo: yes
+      sudo_user: "{{ username }}"
+  
     - name: "Link current to new release"
       file:
         src: "{{ release_path }}"
@@ -60,6 +66,15 @@
         owner: "{{ username }}"
         group: "{{ username }}"
         state: link
+      sudo: yes
+      sudo_user: "{{ username }}"
+
+    - name: "Create tmp dir"
+      file:
+        path: "{{ release_path }}/tmp"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
       sudo: yes
       sudo_user: "{{ username }}"
 
