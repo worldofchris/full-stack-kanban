@@ -3,6 +3,9 @@ class Worker < ActiveRecord::Base
 
   def work
     Kernel.sleep(duration)
+    unless work_cmd.nil?
+      Kernel.system(work_cmd)
+    end
     return if next_worker.nil?
     WorkJob.set(queue: next_worker_name).perform_later
   end
