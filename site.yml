@@ -84,3 +84,9 @@
     - role: collectd-resque
       username: bcs
       endpoint: "{{ redis_endpoint }}" 
+    - role: logentries
+      logentries_account_key: "eaefb3ce-204f-4743-8a30-13ca53a4f905"
+      logentries_logs:
+        - name: "bcs"
+          path: "/usr/local/bcs/current/log/{{ launch_environment }}.log"
+      tags: baff

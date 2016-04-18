@@ -32,7 +32,7 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'resque', github: 'resque/resque', branch: '1-x-stable'
+gem 'resque', github: 'resque/resque', ref: '2aa6964f4f0097f2df2d7783ad262bf36b7c7907'
 gem 'resque-web', require: 'resque_web'
 
 gem 'collectd-resque', git: 'https://github.com/worldofchris/collectd-resque.git'
@@ -56,5 +56,6 @@ end
 
 group :development, :test do
   gem 'rspec-rails', '~> 3.0'
+  gem 'rspec-activemodel-mocks'
   gem 'pry'
 end

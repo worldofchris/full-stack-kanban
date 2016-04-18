@@ -66,7 +66,25 @@ Enqueue some work with
     rails c
     irb(main):004:0> WorkJob.set(queue: 'ingest').perform_later
 
+Or:
+
+    10.times{ |x| WorkJob.set(queue: 'ingest').perform_later("#{Time.now.to_i.to_s}-#{x.to_s.rjust(2, '0')}") }
+
 Create some workers to do the work
 
 rake QUEUE='ingest' BACKGROUND=yes INTERVAL=5 COUNT=1 environment resque:workers >> /dev/null 2>> /dev/null
 
+## Gotcha
+
+You need to run `unset XDG_RUNTIME_DIR` before `rails c`
+
+https://www.thomas-krenn.com/en/wiki/Linux_I/O_Performance_Tests_using_dd
+
+1. Instance Size
+2. Wrapper for starting workers
+3. Wrapper for queueing work
+4. Remove spring from bcs env
+5. Wrapper for clearing stale workers - Resque.workers.each {|w| w.unregister_worker}
+6. Need workers to be logging
+7. Fix this bloody workers count problem gem 'resque', github: 'resque/resque', ref: '2aa6964f4f0097f2df2d7783ad262bf36b7c7907'
+8. Fix up pending tests

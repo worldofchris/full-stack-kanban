@@ -1,12 +1,15 @@
 class Worker < ActiveRecord::Base
   has_one :next_worker, class_name: 'Worker', foreign_key: 'next_worker'
 
-  def work
+  def work(unique_id)
     Kernel.sleep(duration)
     unless work_cmd.nil?
       Kernel.system(work_cmd)
     end
     return if next_worker.nil?
+
+    logger.info("name: #{next_worker_name} state: enqueued unique_id: #{@unique_id}")
+
     WorkJob.set(queue: next_worker_name).perform_later
   end
 
