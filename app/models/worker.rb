@@ -10,7 +10,7 @@ class Worker < ActiveRecord::Base
 
     logger.info("name: #{next_worker_name} state: enqueued unique_id: #{unique_id}")
 
-    WorkJob.set(queue: next_worker_name).perform_later
+    WorkJob.set(queue: next_worker_name).perform_later(unique_id)
   end
 
   def next_worker_id
