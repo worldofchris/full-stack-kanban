@@ -8,7 +8,7 @@ class Worker < ActiveRecord::Base
     end
     return if next_worker.nil?
 
-    logger.info("name: #{next_worker_name} state: enqueued unique_id: #{@unique_id}")
+    logger.info("name: #{next_worker_name} state: enqueued unique_id: #{unique_id}")
 
     WorkJob.set(queue: next_worker_name).perform_later
   end
